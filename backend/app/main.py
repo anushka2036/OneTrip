@@ -1,5 +1,9 @@
 from fastapi import FastAPI
+
 from .database import test_database_connection
+from .routes.trips import router as trips_router
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI(
     title="OneTrip API",
@@ -24,3 +28,16 @@ def health_check():
         "database_connected": database_status
     }
 
+
+app.include_router(
+    trips_router,
+    prefix="/api/trips",
+    tags=["Trips"]
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

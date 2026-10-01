@@ -1,3 +1,4 @@
+// lib/screens/notifications_screen.dart
 
 import 'package:flutter/material.dart';
 
@@ -6,166 +7,100 @@ class NotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+    final notifications = [
+      {
+        'icon': Icons.luggage_outlined,
+        'title': 'Upcoming Trip',
+        'message': 'Your Manali trip is coming up on 12 October.',
+        'time': '2 hours ago',
+      },
+      {
+        'icon': Icons.event_note_outlined,
+        'title': 'Itinerary Ready',
+        'message': 'Your itinerary has been prepared.',
+        'time': '5 hours ago',
+      },
+      {
+        'icon': Icons.account_balance_wallet_outlined,
+        'title': 'Budget Reminder',
+        'message': 'You have ₹6,500 remaining in your trip budget.',
+        'time': 'Yesterday',
+      },
+      {
+        'icon': Icons.receipt_long_outlined,
+        'title': 'Ticket Processed',
+        'message': 'Your travel ticket has been added successfully.',
+        'time': 'Yesterday',
+      },
+      {
+        'icon': Icons.lightbulb_outline,
+        'title': 'Travel Tip',
+        'message': 'Keep digital copies of your important documents.',
+        'time': '2 days ago',
+      },
+    ];
 
+    return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F7F7),
+        title: const Text('Notifications'),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.black,
-        title: const Text(
-          'Notifications',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: notifications.length,
+        itemBuilder: (context, index) {
+          final item = notifications[index];
 
-      body: ListView(
-        padding: const EdgeInsets.all(14),
-        children: [
-
-          // =========================
-          // UPCOMING TRIP
-          // =========================
-          _notificationCard(
-            icon: Icons.flight_takeoff_outlined,
-            title: 'Upcoming Trip',
-            message: 'Your Manali trip is coming up on 12 October.',
-            time: 'Today',
-            onTap: () {},
-          ),
-
-          // =========================
-          // ITINERARY
-          // =========================
-          _notificationCard(
-            icon: Icons.event_note_outlined,
-            title: 'Itinerary Ready',
-            message: 'Your AI-generated itinerary is ready to view.',
-            time: '2 hours ago',
-            onTap: () {},
-          ),
-
-          // =========================
-          // EXPENSE
-          // =========================
-          _notificationCard(
-            icon: Icons.account_balance_wallet_outlined,
-            title: 'Budget Reminder',
-            message: 'You have used 70% of your trip budget.',
-            time: 'Yesterday',
-            onTap: () {},
-          ),
-
-          // =========================
-          // TICKET
-          // =========================
-          _notificationCard(
-            icon: Icons.receipt_long_outlined,
-            title: 'Ticket Processed',
-            message: 'Your uploaded ticket details have been extracted.',
-            time: '2 days ago',
-            onTap: () {},
-          ),
-
-          // =========================
-          // TRAVEL TIP
-          // =========================
-          _notificationCard(
-            icon: Icons.lightbulb_outline,
-            title: 'Travel Tip',
-            message: 'Check your itinerary before starting your trip.',
-            time: '3 days ago',
-            onTap: () {},
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _notificationCard({
-    required IconData icon,
-    required String title,
-    required String message,
-    required String time,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE1E1E1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            // ICON
-            Container(
-              width: 45,
-              height: 45,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                color: Colors.black87,
-                size: 23,
-              ),
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
             ),
-
-            const SizedBox(width: 12),
-
-            // TEXT
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.grey.shade200,
+                  child: Icon(item['icon'] as IconData),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Text(
+                        item['title'].toString(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: 5),
                       Text(
-                        time,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey.shade700,
+                        item['message'].toString(),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item['time'].toString(),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 5),
-
-                  Text(
-                    message,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
-

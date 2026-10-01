@@ -1,3 +1,5 @@
+// lib/screens/settings_screen.dart
+
 import 'package:flutter/material.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -8,106 +10,82 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  String selectedTheme = 'System Default';
+  bool notifications = true;
+  bool locationServices = true;
   String travelStyle = 'Balanced';
   String language = 'English';
-
-  bool notificationsEnabled = true;
-  bool locationEnabled = true;
+  String theme = 'System';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.black,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            'Appearance',
+            'Preferences',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 10),
-
-          ListTile(
-            leading: const Icon(Icons.palette_outlined),
-            title: const Text('Theme'),
-            subtitle: Text(selectedTheme),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _showThemeOptions,
+          _dropdown(
+            icon: Icons.palette_outlined,
+            title: 'Theme',
+            value: theme,
+            values: ['System', 'Light', 'Dark'],
+            onChanged: (value) {
+              setState(() => theme = value!);
+            },
           ),
-
-          const SizedBox(height: 20),
-
-          const Text(
-            'Travel Preferences',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          _dropdown(
+            icon: Icons.flight_takeoff_outlined,
+            title: 'Travel Style',
+            value: travelStyle,
+            values: [
+              'Budget',
+              'Balanced',
+              'Luxury',
+              'Adventure',
+              'Relaxed',
+            ],
+            onChanged: (value) {
+              setState(() => travelStyle = value!);
+            },
           ),
-
-          const SizedBox(height: 10),
-
-          ListTile(
-            leading: const Icon(Icons.travel_explore),
-            title: const Text('Travel Style'),
-            subtitle: Text(travelStyle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _showTravelStyleOptions,
-          ),
-
-          const SizedBox(height: 20),
-
-          const Text(
-            'App Settings',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
           SwitchListTile(
             secondary: const Icon(Icons.notifications_outlined),
             title: const Text('Notifications'),
-            subtitle: const Text('Receive trip and reminder notifications'),
-            value: notificationsEnabled,
+            value: notifications,
             onChanged: (value) {
-              setState(() {
-                notificationsEnabled = value;
-              });
+              setState(() => notifications = value);
             },
           ),
-
           SwitchListTile(
             secondary: const Icon(Icons.location_on_outlined),
             title: const Text('Location Services'),
-            subtitle: const Text('Allow location-based travel features'),
-            value: locationEnabled,
+            value: locationServices,
             onChanged: (value) {
-              setState(() {
-                locationEnabled = value;
-              });
+              setState(() => locationServices = value);
             },
           ),
-
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: const Text('Language'),
-            subtitle: Text(language),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _showLanguageOptions,
+          _dropdown(
+            icon: Icons.language_outlined,
+            title: 'Language',
+            value: language,
+            values: ['English', 'Hindi', 'Marathi'],
+            onChanged: (value) {
+              setState(() => language = value!);
+            },
           ),
-
-          const SizedBox(height: 20),
-
+          const SizedBox(height: 25),
           const Text(
             'Account',
             style: TextStyle(
@@ -115,248 +93,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 10),
-
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: const Text('Account & Privacy'),
-            subtitle: const Text('Manage your account and privacy'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Account settings will be connected later.'),
-                ),
-              );
-            },
+          _item(
+            Icons.person_outline,
+            'Account & Privacy',
+            () {},
           ),
-
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text('Help & Support'),
-            subtitle: const Text('Get help with OneTrip'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Help & Support will be added later.'),
-                ),
-              );
-            },
+          _item(
+            Icons.help_outline,
+            'Help & Support',
+            () {},
           ),
-
+          _item(
+            Icons.info_outline,
+            'About OneTrip',
+            () {},
+          ),
           const SizedBox(height: 20),
-
-          ListTile(
-            leading: const Icon(
-              Icons.logout,
-              color: Colors.red,
-            ),
-            title: const Text(
-              'Logout',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            onTap: _logout,
-          ),
-
-          const SizedBox(height: 30),
-
-          const Center(
-            child: Text(
-              'OneTrip\nSmart Travel Companion',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-              ),
-            ),
+          OutlinedButton(
+            onPressed: () {
+              Navigator.popUntil(context, (route) => route.isFirst);
+            },
+            child: const Text('Logout'),
           ),
         ],
       ),
     );
   }
 
-  void _showThemeOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ListTile(
-              title: Text(
-                'Select Theme',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+  Widget _dropdown({
+    required IconData icon,
+    required String title,
+    required String value,
+    required List<String> values,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      trailing: DropdownButton<String>(
+        value: value,
+        underline: const SizedBox(),
+        items: values
+            .map(
+              (item) => DropdownMenuItem(
+                value: item,
+                child: Text(item),
               ),
-            ),
-            _optionTile(
-              'System Default',
-              selectedTheme,
-              (value) {
-                setState(() {
-                  selectedTheme = value;
-                });
-                Navigator.pop(context);
-              },
-            ),
-            _optionTile(
-              'Light',
-              selectedTheme,
-              (value) {
-                setState(() {
-                  selectedTheme = value;
-                });
-                Navigator.pop(context);
-              },
-            ),
-            _optionTile(
-              'Dark',
-              selectedTheme,
-              (value) {
-                setState(() {
-                  selectedTheme = value;
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        );
-      },
+            )
+            .toList(),
+        onChanged: onChanged,
+      ),
     );
   }
 
-  void _showTravelStyleOptions() {
-    final styles = [
-      'Budget',
-      'Balanced',
-      'Luxury',
-      'Adventure',
-      'Relaxed',
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ListTile(
-              title: Text(
-                'Travel Style',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            ...styles.map(
-              (style) => _optionTile(
-                style,
-                travelStyle,
-                (value) {
-                  setState(() {
-                    travelStyle = value;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showLanguageOptions() {
-    final languages = [
-      'English',
-      'Hindi',
-      'Marathi',
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ListTile(
-              title: Text(
-                'Language',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            ...languages.map(
-              (lang) => _optionTile(
-                lang,
-                language,
-                (value) {
-                  setState(() {
-                    language = value;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _optionTile(
-    String value,
-    String selectedValue,
-    Function(String) onSelected,
+  Widget _item(
+    IconData icon,
+    String title,
+    VoidCallback onTap,
   ) {
     return ListTile(
-      title: Text(value),
-      trailing: value == selectedValue
-          ? const Icon(Icons.check)
-          : null,
-      onTap: () => onSelected(value),
-    );
-  }
-
-  void _logout() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Logout'),
-          content: const Text(
-            'Are you sure you want to logout?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-
-                ScaffoldMessenger.of(this.context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Logout will be connected to Firebase Auth later.',
-                    ),
-                  ),
-                );
-              },
-              child: const Text('Logout'),
-            ),
-          ],
-        );
-      },
+      leading: Icon(icon),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }

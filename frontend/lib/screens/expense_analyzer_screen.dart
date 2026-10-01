@@ -1,3 +1,5 @@
+// lib/screens/expense_analyzer_screen.dart
+
 import 'package:flutter/material.dart';
 
 class ExpenseAnalyzerScreen extends StatefulWidget {
@@ -8,309 +10,298 @@ class ExpenseAnalyzerScreen extends StatefulWidget {
       _ExpenseAnalyzerScreenState();
 }
 
-class _ExpenseAnalyzerScreenState
-    extends State<ExpenseAnalyzerScreen> {
-  final TextEditingController destinationController =
+class _ExpenseAnalyzerScreenState extends State<ExpenseAnalyzerScreen> {
+  final TextEditingController _locationController =
+      TextEditingController();
+  final TextEditingController _budgetController =
       TextEditingController();
 
-  final TextEditingController budgetController =
-      TextEditingController();
+  bool _hasResult = false;
+  double _budget = 0;
 
-  final TextEditingController daysController =
-      TextEditingController();
-
-  final TextEditingController peopleController =
-      TextEditingController(text: '2');
+  double _hotel = 0;
+  double _food = 0;
+  double _transport = 0;
+  double _entryFees = 0;
+  double _activities = 0;
+  double _miscellaneous = 0;
 
   @override
   void dispose() {
-    destinationController.dispose();
-    budgetController.dispose();
-    daysController.dispose();
-    peopleController.dispose();
+    _locationController.dispose();
+    _budgetController.dispose();
     super.dispose();
   }
 
-  void analyzeExpenses() {
-    FocusScope.of(context).unfocus();
+  void _analyzeBudget() {
+    final budget = double.tryParse(_budgetController.text.trim());
 
-    if (destinationController.text.isEmpty ||
-        budgetController.text.isEmpty ||
-        daysController.text.isEmpty ||
-        peopleController.text.isEmpty) {
+    if (_locationController.text.trim().isEmpty || budget == null || budget <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fill all the fields'),
+          content: Text('Please enter a location and a valid budget.'),
         ),
       );
       return;
     }
 
-    final double? budget =
-        double.tryParse(budgetController.text);
+    setState(() {
+      _budget = budget;
 
-    final int? days =
-        int.tryParse(daysController.text);
+      _hotel = budget * 0.30;
+      _food = budget * 0.20;
+      _transport = budget * 0.15;
+      _entryFees = budget * 0.10;
+      _activities = budget * 0.20;
+      _miscellaneous = budget * 0.05;
 
-    final int? people =
-        int.tryParse(peopleController.text);
-
-    if (budget == null || days == null || people == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter valid numbers'),
-        ),
-      );
-      return;
-    }
-
-    final double hotelCost =
-        budget * 0.30;
-
-    final double foodCost =
-        budget * 0.20;
-
-    final double transportCost =
-        budget * 0.15;
-
-    final double activitiesCost =
-        budget * 0.20;
-
-    final double entryFees =
-        budget * 0.10;
-
-    final double miscellaneous =
-        budget * 0.05;
-
-    final double total =
-        hotelCost +
-        foodCost +
-        transportCost +
-        activitiesCost +
-        entryFees +
-        miscellaneous;
-
-    final double remaining =
-        budget - total;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Expense Analysis',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  '$days days • $people people',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                _expenseRow(
-                  'Hotel',
-                  hotelCost,
-                ),
-
-                _expenseRow(
-                  'Food',
-                  foodCost,
-                ),
-
-                _expenseRow(
-                  'Transport',
-                  transportCost,
-                ),
-
-                _expenseRow(
-                  'Activities',
-                  activitiesCost,
-                ),
-
-                _expenseRow(
-                  'Entry Fees',
-                  entryFees,
-                ),
-
-                _expenseRow(
-                  'Miscellaneous',
-                  miscellaneous,
-                ),
-
-                const Divider(height: 30),
-
-                _expenseRow(
-                  'Estimated Total',
-                  total,
-                  bold: true,
-                ),
-
-                _expenseRow(
-                  'Remaining Budget',
-                  remaining,
-                  bold: true,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _expenseRow(
-    String title,
-    double amount, {
-    bool bold = false,
-  }) {
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight:
-                  bold ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-          Text(
-            '₹${amount.toStringAsFixed(0)}',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight:
-                  bold ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
+      _hasResult = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
         title: const Text('Expense Analyzer'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Plan Your Travel Budget',
+              'Plan Your Expenses',
               style: TextStyle(
-                fontSize: 26,
+                fontSize: 25,
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 8),
-
             const Text(
-              'Enter your trip details to estimate your expenses.',
+              'Enter your destination and total budget. OneTrip will generate an estimated expense breakdown.',
               style: TextStyle(
                 color: Colors.grey,
+                height: 1.5,
               ),
             ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 30),
-
-            TextField(
-              controller: destinationController,
-              decoration: const InputDecoration(
-                labelText: 'Destination',
-                hintText: 'e.g. Goa',
-                border: OutlineInputBorder(),
-                prefixIcon:
-                    Icon(Icons.location_on_outlined),
-              ),
+            _inputField(
+              controller: _locationController,
+              label: 'Destination',
+              hint: 'e.g. Manali',
+              icon: Icons.location_on_outlined,
             ),
 
             const SizedBox(height: 16),
 
-            TextField(
-              controller: budgetController,
-              keyboardType:
-                  TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Total Budget',
-                hintText: 'e.g. 25000',
-                border: OutlineInputBorder(),
-                prefixIcon:
-                    Icon(Icons.currency_rupee),
-              ),
+            _inputField(
+              controller: _budgetController,
+              label: 'Total Budget',
+              hint: 'e.g. 25000',
+              icon: Icons.account_balance_wallet_outlined,
+              keyboardType: TextInputType.number,
             ),
 
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: daysController,
-              keyboardType:
-                  TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Number of Days',
-                hintText: 'e.g. 4',
-                border: OutlineInputBorder(),
-                prefixIcon:
-                    Icon(Icons.calendar_today_outlined),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: peopleController,
-              keyboardType:
-                  TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Number of People',
-                border: OutlineInputBorder(),
-                prefixIcon:
-                    Icon(Icons.people_outline),
-              ),
-            ),
-
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
 
             SizedBox(
               width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: analyzeExpenses,
-                child: const Text(
-                  'Analyze Expenses',
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: _analyzeBudget,
+                icon: const Icon(Icons.auto_awesome),
+                label: const Text(
+                  'Analyze My Budget',
                   style: TextStyle(
-                    fontSize: 17,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
+
+            if (_hasResult) ...[
+              const SizedBox(height: 30),
+
+              Text(
+                'Estimated Budget for ${_locationController.text.trim()}',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              Text(
+                'Total budget: ₹${_budget.toStringAsFixed(0)}',
+                style: const TextStyle(
+                  color: Colors.grey,
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              _expenseCard(
+                title: 'Hotel / Stay',
+                amount: _hotel,
+                percentage: 30,
+                icon: Icons.hotel_outlined,
+              ),
+
+              _expenseCard(
+                title: 'Food',
+                amount: _food,
+                percentage: 20,
+                icon: Icons.restaurant_outlined,
+              ),
+
+              _expenseCard(
+                title: 'Transport',
+                amount: _transport,
+                percentage: 15,
+                icon: Icons.directions_car_outlined,
+              ),
+
+              _expenseCard(
+                title: 'Entry Fees',
+                amount: _entryFees,
+                percentage: 10,
+                icon: Icons.confirmation_number_outlined,
+              ),
+
+              _expenseCard(
+                title: 'Activities',
+                amount: _activities,
+                percentage: 20,
+                icon: Icons.local_activity_outlined,
+              ),
+
+              _expenseCard(
+                title: 'Miscellaneous',
+                amount: _miscellaneous,
+                percentage: 5,
+                icon: Icons.more_horiz,
+              ),
+
+              const SizedBox(height: 18),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Text(
+                  'AI integration will later use the destination, trip duration, travel style and other factors to produce a more personalized expense prediction.',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _inputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: Icon(icon),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _expenseCard({
+    required String title,
+    required double amount,
+    required int percentage,
+    required IconData icon,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  '$percentage% of budget',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '₹${amount.toStringAsFixed(0)}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,3 +1,5 @@
+// lib/screens/plan_trip_screen.dart
+
 import 'package:flutter/material.dart';
 
 class PlanTripScreen extends StatefulWidget {
@@ -8,273 +10,227 @@ class PlanTripScreen extends StatefulWidget {
 }
 
 class _PlanTripScreenState extends State<PlanTripScreen> {
-  final TextEditingController tripNameController = TextEditingController();
-  final TextEditingController destinationController =
-      TextEditingController();
+  final destinationController = TextEditingController();
+  final budgetController = TextEditingController();
 
+  int days = 3;
+  String travelStyle = 'Balanced';
   DateTime? startDate;
-  DateTime? endDate;
-
-  List<String> itinerary = [
-    'Day 1: Location 1',
-    'Day 2: Location 2',
-  ];
-
-  Future<void> selectDate(bool isStartDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2035),
-    );
-
-    if (picked == null) return;
-
-    setState(() {
-      if (isStartDate) {
-        startDate = picked;
-      } else {
-        endDate = picked;
-      }
-    });
-  }
-
-  void addDay() {
-    setState(() {
-      itinerary.add('Day ${itinerary.length + 1}: Location');
-    });
-  }
 
   @override
   void dispose() {
-    tripNameController.dispose();
     destinationController.dispose();
+    budgetController.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectDate() async {
+    final date = await showDatePicker(
+      context: context,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2035),
+      initialDate: DateTime.now(),
+    );
+
+    if (date != null) {
+      setState(() {
+        startDate = date;
+      });
+    }
+  }
+
+  void _createTrip() {
+    final destination = destinationController.text.trim();
+
+    if (destination.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a destination.'),
+        ),
+      );
+      return;
+    }
+
+    final budget =
+        double.tryParse(budgetController.text.trim()) ?? 0;
+
+    final dateText = startDate == null
+        ? 'Date not selected'
+        : '${startDate!.day}/${startDate!.month}/${startDate!.year}';
+
+    Navigator.pop(
+      context,
+      {
+        'destination': destination,
+        'dates': '$dateText • $days days',
+        'status': 'Upcoming',
+        'budget': budget,
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        title: const Text('Plan a Trip'),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: Colors.black,
-            size: 20,
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 45,
-            vertical: 8,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE5E5E5),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Text(
-            'Plan Trip',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        centerTitle: true,
+        foregroundColor: Colors.black,
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 90),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // Trip Name
-            TextField(
-              controller: tripNameController,
-              decoration: InputDecoration(
-                hintText: 'Trip Name',
-                filled: true,
-                fillColor: const Color(0xFFF4EEEE),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  borderSide: BorderSide.none,
-                ),
+            const Text(
+              'Where are you going?',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
             ),
-
-            const SizedBox(height: 12),
-
-            // Dates
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => selectDate(true),
-                    child: dateBox(
-                      startDate == null
-                          ? 'Start Date'
-                          : '${startDate!.day}/${startDate!.month}/${startDate!.year}',
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: InkWell(
-                    onTap: () => selectDate(false),
-                    child: dateBox(
-                      endDate == null
-                          ? 'End Date'
-                          : '${endDate!.day}/${endDate!.month}/${endDate!.year}',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Destination
+            const SizedBox(height: 15),
             TextField(
               controller: destinationController,
-              decoration: InputDecoration(
-                hintText: 'Destination',
-                filled: true,
-                fillColor: const Color(0xFFF4EEEE),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  borderSide: BorderSide.none,
+              decoration: _decoration(
+                'Destination',
+                Icons.location_on_outlined,
+              ),
+            ),
+            const SizedBox(height: 25),
+            const Text(
+              'Starting Date',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            InkWell(
+              onTap: _selectDate,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(17),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today_outlined),
+                    const SizedBox(width: 12),
+                    Text(
+                      startDate == null
+                          ? 'Select date'
+                          : '${startDate!.day}/${startDate!.month}/${startDate!.year}',
+                    ),
+                  ],
                 ),
               ),
             ),
-
-            const SizedBox(height: 18),
-
-            // Itinerary heading
+            const SizedBox(height: 25),
+            const Text(
+              'Number of Days',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Itinerary',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                IconButton(
+                  onPressed: () {
+                    if (days > 1) {
+                      setState(() => days--);
+                    }
+                  },
+                  icon: const Icon(Icons.remove_circle_outline),
+                ),
+                Text(
+                  '$days days',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 IconButton(
-                  onPressed: addDay,
+                  onPressed: () {
+                    if (days < 30) {
+                      setState(() => days++);
+                    }
+                  },
                   icon: const Icon(Icons.add_circle_outline),
                 ),
               ],
             ),
-
-            const SizedBox(height: 5),
-
-            // Itinerary cards
-            ...itinerary.map(
-              (day) => Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4EEEE),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  day,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+            const SizedBox(height: 15),
+            const Text(
+              'Travel Style',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
               ),
             ),
-
-            const SizedBox(height: 10),
-
-            // Add location button
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: travelStyle,
+              decoration: _decoration(
+                'Travel Style',
+                Icons.flight_takeoff_outlined,
+              ),
+              items: [
+                'Budget',
+                'Balanced',
+                'Luxury',
+                'Adventure',
+                'Relaxed',
+              ]
+                  .map(
+                    (item) => DropdownMenuItem(
+                      value: item,
+                      child: Text(item),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                setState(() => travelStyle = value!);
+              },
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: budgetController,
+              keyboardType: TextInputType.number,
+              decoration: _decoration(
+                'Estimated Budget',
+                Icons.currency_rupee,
+              ),
+            ),
+            const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
+              height: 52,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Location selection will be added next.'),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.location_on_outlined),
-                label: const Text('Add Location'),
+                onPressed: _createTrip,
+                icon: const Icon(Icons.add),
+                label: const Text('Create Trip'),
               ),
             ),
           ],
         ),
       ),
-
-      // Bottom navigation
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          if (index == 2) return;
-
-          Navigator.pop(context);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_on_outlined),
-            label: 'Map',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_location_alt_outlined),
-            label: 'Plan Trip',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.explore_outlined),
-            label: 'Explore',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
-      ),
     );
   }
 
-  Widget dateBox(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 15,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4EEEE),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 14,
-          color: Colors.black87,
-        ),
+  InputDecoration _decoration(String hint, IconData icon) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: Icon(icon),
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
       ),
     );
   }

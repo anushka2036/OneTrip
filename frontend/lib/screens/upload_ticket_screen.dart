@@ -1,3 +1,5 @@
+// lib/screens/upload_ticket_screen.dart
+
 import 'package:flutter/material.dart';
 
 class UploadTicketScreen extends StatefulWidget {
@@ -8,192 +10,154 @@ class UploadTicketScreen extends StatefulWidget {
 }
 
 class _UploadTicketScreenState extends State<UploadTicketScreen> {
-  String selectedTicketType = 'Flight';
-  bool ticketUploaded = false;
-  bool detailsExtracted = false;
-  bool reminderEnabled = false;
+  bool _isProcessing = false;
+  bool _ticketProcessed = false;
 
-  void uploadTicket() {
+  String _ticketType = 'Train';
+
+  final Map<String, String> _extractedDetails = {
+    'Passenger Name': 'Not extracted yet',
+    'PNR': 'Not extracted yet',
+    'Train / Flight No.': 'Not extracted yet',
+    'Seat No.': 'Not extracted yet',
+    'From': 'Not extracted yet',
+    'To': 'Not extracted yet',
+    'Travel Date': 'Not extracted yet',
+    'Departure Time': 'Not extracted yet',
+  };
+
+  Future<void> _uploadTicket() async {
     setState(() {
-      ticketUploaded = true;
+      _isProcessing = true;
+      _ticketProcessed = false;
     });
-  }
 
-  void extractDetails() {
+    // Backend / AI ticket extraction will be connected here later.
+    await Future.delayed(const Duration(seconds: 2));
+
     setState(() {
-      detailsExtracted = true;
-    });
-  }
+      _isProcessing = false;
+      _ticketProcessed = true;
 
-  void setReminder() {
-    setState(() {
-      reminderEnabled = true;
+      // Demo extracted data.
+      _extractedDetails['Passenger Name'] = 'Demo Passenger';
+      _extractedDetails['PNR'] = 'A1B2C3';
+      _extractedDetails['Train / Flight No.'] =
+          _ticketType == 'Train' ? '12345' : 'AI-204';
+      _extractedDetails['Seat No.'] = 'S4 / 32';
+      _extractedDetails['From'] = 'Mumbai';
+      _extractedDetails['To'] = 'Manali';
+      _extractedDetails['Travel Date'] = '12 October 2026';
+      _extractedDetails['Departure Time'] = '08:30 AM';
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reminder set successfully!'),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-
       appBar: AppBar(
+        title: const Text('Upload Ticket'),
         backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         elevation: 0,
-
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: Colors.black,
-            size: 20,
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-
-        title: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 35,
-            vertical: 8,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE1E1E1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Text(
-            'Upload Ticket',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-
-        centerTitle: true,
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 15, 18, 30),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // =========================================
-            // TICKET TYPE
-            // =========================================
+            const Text(
+              'Ticket Processing',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Upload your train or flight ticket. AI will extract important travel details automatically.',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
 
             const Text(
               'Ticket Type',
               style: TextStyle(
-                fontSize: 15,
                 fontWeight: FontWeight.w600,
+                fontSize: 16,
               ),
             ),
-
             const SizedBox(height: 10),
 
             Row(
               children: [
                 Expanded(
                   child: _ticketTypeButton(
-                    title: 'Flight',
-                    icon: Icons.flight_outlined,
-                    selected: selectedTicketType == 'Flight',
-                    onTap: () {
-                      setState(() {
-                        selectedTicketType = 'Flight';
-                      });
-                    },
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: _ticketTypeButton(
                     title: 'Train',
                     icon: Icons.train_outlined,
-                    selected: selectedTicketType == 'Train',
-                    onTap: () {
-                      setState(() {
-                        selectedTicketType = 'Train';
-                      });
-                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _ticketTypeButton(
+                    title: 'Flight',
+                    icon: Icons.flight_outlined,
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 22),
-
-            // =========================================
-            // UPLOAD AREA
-            // =========================================
-
-            const Text(
-              'Upload your ticket',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(height: 10),
+            const SizedBox(height: 24),
 
             InkWell(
-              onTap: uploadTicket,
-              borderRadius: BorderRadius.circular(12),
+              onTap: _isProcessing ? null : _uploadTicket,
+              borderRadius: BorderRadius.circular(18),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
-                  vertical: 32,
+                  vertical: 42,
                   horizontal: 20,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE1E1E1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: Colors.grey.shade400,
+                    color: Colors.grey.shade300,
+                    width: 1.5,
                   ),
                 ),
                 child: Column(
                   children: [
-
                     Icon(
-                      ticketUploaded
-                          ? Icons.check_circle_outline
+                      _isProcessing
+                          ? Icons.hourglass_top_rounded
                           : Icons.cloud_upload_outlined,
-                      size: 48,
+                      size: 58,
+                      color: Colors.black87,
                     ),
-
-                    const SizedBox(height: 12),
-
+                    const SizedBox(height: 16),
                     Text(
-                      ticketUploaded
-                          ? 'Ticket uploaded'
-                          : 'Tap to upload ticket',
+                      _isProcessing
+                          ? 'Processing ticket...'
+                          : 'Upload Ticket',
                       style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-
-                    const SizedBox(height: 6),
-
+                    const SizedBox(height: 8),
                     Text(
-                      ticketUploaded
-                          ? 'Ready for AI extraction'
-                          : 'Upload JPG, PNG or PDF',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade700,
+                      _isProcessing
+                          ? 'AI is extracting ticket details'
+                          : 'Tap to select a ticket image or PDF',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.grey,
                       ),
                     ),
                   ],
@@ -201,271 +165,125 @@ class _UploadTicketScreenState extends State<UploadTicketScreen> {
               ),
             ),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
 
-            // =========================================
-            // AI EXTRACTION
-            // =========================================
+            if (_isProcessing)
+              const LinearProgressIndicator(),
 
-            if (ticketUploaded && !detailsExtracted)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: extractDetails,
-                  icon: const Icon(Icons.auto_awesome),
-                  label: const Text(
-                    'Extract Ticket Details with AI',
-                  ),
+            if (_ticketProcessed) ...[
+              const SizedBox(height: 24),
+              const Text(
+                'Extracted Details',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-
-            // =========================================
-            // EXTRACTED DETAILS
-            // =========================================
-
-            if (detailsExtracted) ...[
-              const SizedBox(height: 5),
-
-              Row(
-                children: const [
-                  Icon(
-                    Icons.auto_awesome,
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Extracted Details',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-
               const SizedBox(height: 12),
-
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE1E1E1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
-                  children: [
-
-                    _detailRow(
-                      'Passenger',
-                      'Aryan Antad',
-                    ),
-
-                    _detailRow(
-                      selectedTicketType == 'Flight'
-                          ? 'Flight Number'
-                          : 'Train Number',
-                      selectedTicketType == 'Flight'
-                          ? 'AI 202'
-                          : '12951',
-                    ),
-
-                    _detailRow(
-                      'From',
-                      'Pune',
-                    ),
-
-                    _detailRow(
-                      'To',
-                      'Delhi',
-                    ),
-
-                    _detailRow(
-                      'Date',
-                      '12 October 2026',
-                    ),
-
-                    _detailRow(
-                      'Departure',
-                      '08:30 AM',
-                    ),
-
-                    _detailRow(
-                      'Booking ID',
-                      'ONETRIP12345',
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              // =========================================
-              // REMINDER
-              // =========================================
-
-              Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Colors.grey.shade300,
-                  ),
-                ),
-                child: Row(
-                  children: [
-
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE1E1E1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.notifications_none,
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                  children: _extractedDetails.entries.map((entry) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Travel Reminder',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
+                          Expanded(
+                            flex: 4,
+                            child: Text(
+                              entry.key,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Remind me before departure',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
+                          Expanded(
+                            flex: 6,
+                            child: Text(
+                              entry.value,
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-
-                    Switch(
-                      value: reminderEnabled,
-                      onChanged: (value) {
-                        setState(() {
-                          reminderEnabled = value;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              // =========================================
-              // SAVE BUTTON
-              // =========================================
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: reminderEnabled
-                      ? setReminder
-                      : null,
-                  child: const Text(
-                    'Save Ticket & Reminder',
-                  ),
+                    );
+                  }).toList(),
                 ),
               ),
             ],
+
+            const SizedBox(height: 24),
+
+            const Text(
+              'AI Extraction',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'The uploaded ticket will later be sent to the OneTrip backend, where OCR and AI processing can extract PNR, seat number, transport number, passenger details, dates and locations.',
+              style: TextStyle(
+                color: Colors.grey,
+                height: 1.5,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-
-  // =========================================
-  // TICKET TYPE BUTTON
-  // =========================================
 
   Widget _ticketTypeButton({
     required String title,
     required IconData icon,
-    required bool selected,
-    required VoidCallback onTap,
   }) {
+    final selected = _ticketType == title;
+
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      onTap: () {
+        setState(() {
+          _ticketType = title;
+          _ticketProcessed = false;
+        });
+      },
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: 16,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFFD5D5D5)
-              : const Color(0xFFE1E1E1),
-          borderRadius: BorderRadius.circular(10),
+          color: selected ? Colors.black : Colors.white,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected
-                ? Colors.black
-                : Colors.transparent,
+            color: selected ? Colors.black : Colors.grey.shade300,
           ),
         ),
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 28),
-            const SizedBox(height: 6),
+            Icon(
+              icon,
+              color: selected ? Colors.white : Colors.black,
+            ),
+            const SizedBox(width: 8),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 13,
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.black,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // =========================================
-  // DETAIL ROW
-  // =========================================
-
-  Widget _detailRow(
-    String title,
-    String value,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 105,
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

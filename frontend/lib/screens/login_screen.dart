@@ -1,6 +1,7 @@
 // lib/screens/login_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'home_screen.dart';
 import 'signup_screen.dart';
@@ -16,10 +17,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void _login() {
+  bool _isLoading = false;
+
+  Future<void> _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
+    // Basic validation
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -38,12 +42,72 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const HomeScreen(),
-      ),
-    );
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Firebase login
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      // Login successful
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const HomeScreen(),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message;
+
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No account found with this email.';
+          break;
+        case 'wrong-password':
+        case 'invalid-credential':
+          message = 'Incorrect email or password.';
+          break;
+        case 'invalid-email':
+          message = 'Please enter a valid email address.';
+          break;
+        case 'user-disabled':
+          message = 'This account has been disabled.';
+          break;
+        case 'too-many-requests':
+          message = 'Too many attempts. Please try again later.';
+          break;
+        default:
+          message = 'Login failed. Please try again.';
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -63,6 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               const SizedBox(height: 55),
+
               const Text(
                 'OneTrip',
                 style: TextStyle(
@@ -70,7 +135,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
               const SizedBox(height: 45),
+
               const Text(
                 'Welcome',
                 style: TextStyle(
@@ -78,33 +145,51 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+
               const SizedBox(height: 35),
+
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: _inputDecoration('Email'),
               ),
+
               const SizedBox(height: 15),
+
               TextField(
                 controller: _passwordController,
                 obscureText: true,
                 decoration: _inputDecoration('Password'),
               ),
+
               const SizedBox(height: 25),
+
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _login,
-                  child: const Text('Login'),
+                  onPressed: _isLoading ? null : _login,
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Login'),
                 ),
               ),
+
               const SizedBox(height: 25),
+
               const Text(
                 'OR',
                 style: TextStyle(color: Colors.grey),
               ),
+
               const SizedBox(height: 20),
+
               SizedBox(
                 width: double.infinity,
                 height: 45,
@@ -113,7 +198,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text('Sign in with Google'),
                 ),
               ),
+
               const SizedBox(height: 12),
+
               SizedBox(
                 width: double.infinity,
                 height: 45,
@@ -122,11 +209,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text('Sign in with Apple'),
                 ),
               ),
+
               const SizedBox(height: 30),
+
               const Text(
                 "Don't have an account?",
                 style: TextStyle(color: Colors.grey),
               ),
+
               TextButton(
                 onPressed: () {
                   Navigator.push(

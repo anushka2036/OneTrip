@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "88977635857",
+    "project_id": "onetrip-999be",
+    "storage_bucket": "onetrip-999be.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:88977635857:android:2cd27eb536f88865d8cfb0",
+        "android_client_info": {
+          "package_name": "com.example.one_trip"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "88977635857-of8d1ulee3rm6jlg0ikmbobuebbg47e7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBC_-fc86C3UATDoTkGME0eE6mL9priAkk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "88977635857-of8d1ulee3rm6jlg0ikmbobuebbg47e7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "88977635857-d8huprd0rvic8jamo9p3rff5c9u33rov.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.oneTrip"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

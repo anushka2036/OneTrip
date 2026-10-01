@@ -1,17 +1,155 @@
 // lib/screens/profile_screen.dart
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'explore_screen.dart';
 import 'settings_screen.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  Future<void> _editProfile(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final controller = TextEditingController(
+      text: user.displayName ?? '',
+    );
+
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Edit Profile'),
+          content: TextField(
+            controller: controller,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Full Name',
+              hintText: 'Enter your name',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = controller.text.trim();
+
+                if (name.isNotEmpty) {
+                  Navigator.pop(dialogContext, name);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
+
+    if (newName == null || newName.isEmpty) return;
+
+    try {
+      await user.updateDisplayName(newName);
+      await user.reload();
+
+      if (!context.mounted) return;
+
+      // Because ProfileScreen is currently StatelessWidget,
+      // refresh the screen by replacing it with a new instance.
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const ProfileScreen(),
+        ),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile name updated successfully.'),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.message ?? 'Unable to update profile.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout != true) return;
+
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      if (!context.mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const LoginScreen(),
+        ),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.message ?? 'Unable to logout. Please try again.',
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final User? user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
+
       appBar: AppBar(
         title: const Text('Profile'),
         backgroundColor: Colors.transparent,
@@ -31,6 +169,7 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(18),
         child: Column(
@@ -44,45 +183,75 @@ class ProfileScreen extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
+
             const SizedBox(height: 14),
-            const Text(
-              'Travel Explorer',
-              style: TextStyle(
+
+            Text(
+              user?.displayName?.isNotEmpty == true
+                  ? user!.displayName!
+                  : 'Aryan Antad',
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
+
             const SizedBox(height: 5),
-            const Text(
-              '@travelexplorer',
-              style: TextStyle(color: Colors.grey),
+
+            Text(
+              user?.email ?? 'No email available',
+              style: const TextStyle(
+                color: Colors.grey,
+              ),
             ),
+
             const SizedBox(height: 18),
+
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _Stat(title: 'Trips', value: '12'),
-                _Stat(title: 'Posts', value: '28'),
-                _Stat(title: 'Followers', value: '1.2K'),
-                _Stat(title: 'Following', value: '342'),
+                _Stat(
+                  title: 'Trips',
+                  value: '12',
+                ),
+                _Stat(
+                  title: 'Posts',
+                  value: '28',
+                ),
+                _Stat(
+                  title: 'Followers',
+                  value: '1.2K',
+                ),
+                _Stat(
+                  title: 'Following',
+                  value: '342',
+                ),
               ],
             ),
+
             const SizedBox(height: 20),
+
             const Text(
               'Exploring places, collecting memories and sharing journeys.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: Colors.grey,
+              ),
             ),
+
             const SizedBox(height: 22),
+
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () => _editProfile(context),
                     child: const Text('Edit Profile'),
                   ),
                 ),
+
                 const SizedBox(width: 10),
+
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
@@ -98,7 +267,9 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
+
             const SizedBox(height: 25),
+
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -109,11 +280,29 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             const SizedBox(height: 12),
-            _trip('Manali', 'Himachal Pradesh', Icons.landscape),
-            _trip('Goa', 'Beach trip', Icons.beach_access),
-            _trip('Jaipur', 'Rajasthan', Icons.account_balance),
+
+            _trip(
+              'Manali',
+              'Himachal Pradesh',
+              Icons.landscape,
+            ),
+
+            _trip(
+              'Goa',
+              'Beach trip',
+              Icons.beach_access,
+            ),
+
+            _trip(
+              'Jaipur',
+              'Rajasthan',
+              Icons.account_balance,
+            ),
+
             const SizedBox(height: 20),
+
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -124,16 +313,43 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             const SizedBox(height: 12),
-            _post('Manali in 5 days', 'Budget: ₹18,500 • 12 places'),
-            _post('Goa Weekend', 'Budget: ₹9,800 • 7 places'),
+
+            _post(
+              'Manali in 5 days',
+              'Budget: ₹18,500 • 12 places',
+            ),
+
+            _post(
+              'Goa Weekend',
+              'Budget: ₹9,800 • 7 places',
+            ),
+
+            const SizedBox(height: 25),
+
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () => _logout(context),
+                icon: const Icon(Icons.logout),
+                label: const Text('Logout'),
+              ),
+            ),
+
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _trip(String title, String subtitle, IconData icon) {
+  Widget _trip(
+    String title,
+    String subtitle,
+    IconData icon,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -152,7 +368,9 @@ class ProfileScreen extends StatelessWidget {
             ),
             child: Icon(icon),
           ),
+
           const SizedBox(width: 14),
+
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -163,10 +381,14 @@ class ProfileScreen extends StatelessWidget {
                   fontSize: 16,
                 ),
               ),
+
               const SizedBox(height: 4),
+
               Text(
                 subtitle,
-                style: const TextStyle(color: Colors.grey),
+                style: const TextStyle(
+                  color: Colors.grey,
+                ),
               ),
             ],
           ),
@@ -175,7 +397,10 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _post(String title, String details) {
+  Widget _post(
+    String title,
+    String details,
+  ) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 10),
@@ -194,10 +419,14 @@ class ProfileScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+
           const SizedBox(height: 6),
+
           Text(
             details,
-            style: const TextStyle(color: Colors.grey),
+            style: const TextStyle(
+              color: Colors.grey,
+            ),
           ),
         ],
       ),
@@ -225,7 +454,9 @@ class _Stat extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+
         const SizedBox(height: 4),
+
         Text(
           title,
           style: const TextStyle(

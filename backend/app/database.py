@@ -15,12 +15,16 @@ client = MongoClient(
 
 database = client[settings.database_name]
 
+# MongoDB collection for storing trips
+trips_collection = database["trips"]
+
 
 def test_database_connection():
     try:
         client.admin.command("ping")
         print("MongoDB connection successful!")
         return True
+
     except Exception as e:
         print("MongoDB connection failed!")
         print(e)

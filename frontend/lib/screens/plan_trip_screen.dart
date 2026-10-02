@@ -1,6 +1,6 @@
-// lib/screens/plan_trip_screen.dart
-
 import 'package:flutter/material.dart';
+
+import '../services/trip_api_service.dart';
 
 class PlanTripScreen extends StatefulWidget {
   const PlanTripScreen({super.key});
@@ -14,8 +14,11 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
   final budgetController = TextEditingController();
 
   int days = 3;
+  int travelers = 1;
   String travelStyle = 'Balanced';
   DateTime? startDate;
+
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -25,47 +28,118 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
   }
 
   Future<void> _selectDate() async {
+    final today = DateUtils.dateOnly(DateTime.now());
+
     final date = await showDatePicker(
       context: context,
-      firstDate: DateTime.now(),
+      firstDate: today,
       lastDate: DateTime(2035),
-      initialDate: DateTime.now(),
+      initialDate: startDate ?? today,
     );
 
-    if (date != null) {
+    if (date != null && mounted) {
       setState(() {
         startDate = date;
       });
     }
   }
 
-  void _createTrip() {
-    final destination = destinationController.text.trim();
+  Future<void> _createTrip() async {
+    if (isLoading) return;
 
+    final destination = destinationController.text.trim();
+    final budgetText = budgetController.text.trim();
+
+    // 1. Validate destination.
     if (destination.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a destination.'),
-        ),
-      );
+      _showMessage('Please enter a destination.');
       return;
     }
 
-    final budget =
-        double.tryParse(budgetController.text.trim()) ?? 0;
+    // 2. Validate starting date.
+    if (startDate == null) {
+      _showMessage('Please select a starting date.');
+      return;
+    }
 
-    final dateText = startDate == null
-        ? 'Date not selected'
-        : '${startDate!.day}/${startDate!.month}/${startDate!.year}';
+    // 3. Validate budget.
+    final budget = double.tryParse(budgetText);
 
-    Navigator.pop(
-      context,
-      {
+    if (budget == null || !budget.isFinite || budget <= 0) {
+      _showMessage('Please enter a valid budget greater than ₹0.');
+      return;
+    }
+
+    // The starting date counts as day 1.
+    // For a 3-day trip, end date = start date + 2 days.
+    final selectedStartDate = startDate!;
+    final endDate = selectedStartDate.add(Duration(days: days - 1));
+
+    // The backend requires a title.
+    // The current UI does not have a separate title field.
+    final title = 'Trip to $destination';
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      // 4. Send the trip to FastAPI.
+      // FastAPI saves it in MongoDB Atlas.
+      final savedTrip = await TripApiService.createTrip(
+        title: title,
+        destination: destination,
+        startDate: selectedStartDate,
+        endDate: endDate,
+        budget: budget,
+        travelers: travelers,
+      );
+
+      if (!mounted) return;
+
+      final formattedDate =
+          '${selectedStartDate.day.toString().padLeft(2, '0')}/'
+          '${selectedStartDate.month.toString().padLeft(2, '0')}/'
+          '${selectedStartDate.year}';
+
+      // 5. Show success only after FastAPI returns success.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Trip created and saved successfully!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      // 6. Return the saved trip to the previous screen.
+      // Include both API fields and UI-friendly fields.
+      Navigator.pop(context, {
+        ...savedTrip,
         'destination': destination,
-        'dates': '$dateText • $days days',
-        'status': 'Upcoming',
+        'startDate': selectedStartDate.toIso8601String(),
+        'dates': '$formattedDate • $days days',
+        'days': days,
+        'travelers': travelers,
+        'travelStyle': travelStyle,
         'budget': budget,
-      },
+        'status': 'Upcoming',
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      _showMessage('Could not save trip: ${error.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -85,30 +159,33 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
           children: [
             const Text(
               'Where are you going?',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 15),
+
             TextField(
               controller: destinationController,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
               decoration: _decoration(
                 'Destination',
                 Icons.location_on_outlined,
               ),
             ),
+
             const SizedBox(height: 25),
+
             const Text(
               'Starting Date',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 10),
+
             InkWell(
-              onTap: _selectDate,
+              onTap: isLoading ? null : _selectDate,
+              borderRadius: BorderRadius.circular(12),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(17),
@@ -123,28 +200,34 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
                     Text(
                       startDate == null
                           ? 'Select date'
-                          : '${startDate!.day}/${startDate!.month}/${startDate!.year}',
+                          : '${startDate!.day.toString().padLeft(2, '0')}/'
+                                '${startDate!.month.toString().padLeft(2, '0')}/'
+                                '${startDate!.year}',
                     ),
                   ],
                 ),
               ),
             ),
+
             const SizedBox(height: 25),
+
             const Text(
               'Number of Days',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
+
             Row(
               children: [
                 IconButton(
-                  onPressed: () {
-                    if (days > 1) {
-                      setState(() => days--);
-                    }
-                  },
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          if (days > 1) {
+                            setState(() {
+                              days--;
+                            });
+                          }
+                        },
                   icon: const Icon(Icons.remove_circle_outline),
                 ),
                 Text(
@@ -155,65 +238,124 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () {
-                    if (days < 30) {
-                      setState(() => days++);
-                    }
-                  },
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          if (days < 30) {
+                            setState(() {
+                              days++;
+                            });
+                          }
+                        },
                   icon: const Icon(Icons.add_circle_outline),
                 ),
               ],
             ),
+
             const SizedBox(height: 15),
+
+            const Text(
+              'Number of Travelers',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            ),
+
+            Row(
+              children: [
+                IconButton(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          if (travelers > 1) {
+                            setState(() {
+                              travelers--;
+                            });
+                          }
+                        },
+                  icon: const Icon(Icons.remove_circle_outline),
+                ),
+                Text(
+                  '$travelers '
+                  '${travelers == 1 ? 'traveler' : 'travelers'}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          if (travelers < 20) {
+                            setState(() {
+                              travelers++;
+                            });
+                          }
+                        },
+                  icon: const Icon(Icons.add_circle_outline),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 15),
+
             const Text(
               'Travel Style',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 8),
+
             DropdownButtonFormField<String>(
-              value: travelStyle,
+              initialValue: travelStyle,
               decoration: _decoration(
                 'Travel Style',
                 Icons.flight_takeoff_outlined,
               ),
-              items: [
-                'Budget',
-                'Balanced',
-                'Luxury',
-                'Adventure',
-                'Relaxed',
-              ]
-                  .map(
-                    (item) => DropdownMenuItem(
+              items: ['Budget', 'Balanced', 'Luxury', 'Adventure', 'Relaxed']
+                  .map((item) {
+                    return DropdownMenuItem<String>(
                       value: item,
                       child: Text(item),
-                    ),
-                  )
+                    );
+                  })
                   .toList(),
-              onChanged: (value) {
-                setState(() => travelStyle = value!);
-              },
+              onChanged: isLoading
+                  ? null
+                  : (value) {
+                      if (value != null) {
+                        setState(() {
+                          travelStyle = value;
+                        });
+                      }
+                    },
             ),
+
             const SizedBox(height: 20),
+
             TextField(
               controller: budgetController,
-              keyboardType: TextInputType.number,
-              decoration: _decoration(
-                'Estimated Budget',
-                Icons.currency_rupee,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
               ),
+              textInputAction: TextInputAction.done,
+              decoration: _decoration('Estimated Budget', Icons.currency_rupee),
             ),
+
             const SizedBox(height: 30),
+
             SizedBox(
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: _createTrip,
-                icon: const Icon(Icons.add),
-                label: const Text('Create Trip'),
+                onPressed: isLoading ? null : _createTrip,
+                icon: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add),
+                label: Text(isLoading ? 'Saving Trip...' : 'Create Trip'),
               ),
             ),
           ],

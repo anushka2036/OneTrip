@@ -13,13 +13,19 @@ client = MongoClient(
     )
 )
 
+
 database = client[settings.database_name]
+
 
 # MongoDB collection for storing trips
 trips_collection = database["trips"]
 
 
-def test_database_connection():
+# MongoDB collection for storing expenses
+expenses_collection = database["expenses"]
+
+
+def test_database_connection() -> bool:
     try:
         client.admin.command("ping")
         print("MongoDB connection successful!")

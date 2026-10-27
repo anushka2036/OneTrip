@@ -1,8 +1,9 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .database import test_database_connection
 from .routes.trips import router as trips_router
-from fastapi.middleware.cors import CORSMiddleware
+from .routes.expenses import router as expenses_router
 
 
 app = FastAPI(
@@ -34,7 +35,14 @@ app.include_router(
     prefix="/api/trips",
     tags=["Trips"]
 )
-from fastapi.middleware.cors import CORSMiddleware
+
+
+app.include_router(
+    expenses_router,
+    prefix="/api/expenses",
+    tags=["Expenses"]
+)
+
 
 app.add_middleware(
     CORSMiddleware,
